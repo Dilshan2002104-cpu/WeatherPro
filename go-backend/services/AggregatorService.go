@@ -41,3 +41,24 @@ func (s *AggregatorService) GetWeatherByCity(city string) (*models.WeatherRespon
 	s.cache.Set(cacheKey, weather)
 	return weather, nil
 }
+
+func (s *AggregatorService) GetForecastByCity(city string) (*models.ForecastResponse, error) {
+	cacheKey := fmt.Sprintf("forecast:%s", city)
+
+	if cached, ok := s.cache.Get(cacheKey); ok {
+		return cached.(*models.ForecastResponse), nil
+	}
+
+	lat, lon, err := s.geo.GetCoordinates(city)
+	if err != nil {
+		return nil, err
+	}
+
+	forecast, err := s.weather.GetForecast(lat, lon)
+	if err != nil {
+		return nil, err
+	}
+
+	s.cache.Set(cacheKey, forecast)
+	return forecast, nil
+}
